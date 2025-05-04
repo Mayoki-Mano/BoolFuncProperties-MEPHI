@@ -88,10 +88,28 @@ def fast_walsh_hadamard_transform(f: np.ndarray) -> np.ndarray:
 def nonlinearity(wht: np.ndarray) -> int:
     return (wht.size // 2) - (np.max(np.abs(wht)) // 2)
 
-def correlation(f: np.ndarray, g: np.ndarray) -> float:
-    diff = f ^ g
-    signs = np.where(diff == 0, 1, -1)
-    return np.sum(signs) / f.size
+def correlation_vector_int(f: np.ndarray, g: np.ndarray) -> np.ndarray:
+    """
+    Возвращает целочисленный вектор корреляции между f(x) и g(x ⊕ a)
+    для всех a ∈ {0,1}^n, без нормализации.
+
+    f, g — булевы массивы длины 2^n.
+    Результат — массив длины 2^n со значениями от -2^n до +2^n.
+    """
+    n = int(np.log2(len(f)))
+    assert len(f) == len(g) == 2 ** n
+
+    f_pm = 1 - 2 * f.astype(int)
+    g_pm = 1 - 2 * g.astype(int)
+
+    corr = np.zeros(2 ** n, dtype=int)
+
+    for a in range(2 ** n):
+        indices = np.arange(2 ** n) ^ a
+        corr[a] = np.sum(f_pm * g_pm[indices])
+
+    return corr
+
 
 # === АВТОКОРРЕЛЯЦИЯ ===
 
@@ -160,11 +178,16 @@ def test_boolean_properties(n, f_func, g_func):
     print(f"Walsh-Hadamard Transform ({f_expr.split('=')[0].strip()}): {wht}")
     print(f"Nonlinearity ({f_expr.split('=')[0].strip()}): {nonlinearity(wht)}")
 
-    corr = correlation(f, g)
-    print(f"Correlation between f and g: {corr:.4f}")
+    corr_vec = correlation_vector_int(f, g)
+    print("Целочисленный вектор корреляции f(x) и g(x ⊕ a):")
+    for a, val in enumerate(corr_vec):
+        print(f"a = {a:03b} : {val}")
 
     auto = autocorrelation_spectrum(f)
     print(f"Autocorrelation spectrum ({f_expr.split('=')[0].strip()}): {auto}")
+
+    auto = autocorrelation_spectrum(g)
+    print(f"Autocorrelation spectrum ({g_expr.split('=')[0].strip()}): {auto}")
     print()
     print("Basic property tests passed.\n")
 
@@ -190,7 +213,7 @@ def test_lat_ddt(n, f_func):
 
 if __name__ == "__main__":
     n = 3
-    f = lambda x: x[0] ^ (x[1] & x[2])
-    g = lambda x: x[0] ^ x[1]
+    f = lambda x: x[0] ^ x[2] ^ x[2]&x[1]
+    g = lambda x: x[0] ^ x[1] ^ x[2]
     test_boolean_properties(n, f, g)
     test_lat_ddt(n, f)
