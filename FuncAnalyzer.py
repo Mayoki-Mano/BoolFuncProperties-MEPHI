@@ -156,9 +156,8 @@ def ddt_table(f: np.ndarray, n: int) -> np.ndarray:
 def test_boolean_properties(n, f_func, g_func):
     f_expr = describe_function("f", f_func)
     g_expr = describe_function("g", g_func)
-
-    f = truth_table_from_func(f_func, n)
-    g = truth_table_from_func(g_func, n)
+    f = truth_table_from_func(f_func, n) if callable(f_func) else f_func
+    g = truth_table_from_func(g_func, n) if callable(g_func) else g_func
 
     print("=== ANALYSIS OF BOOLEAN FUNCTION f ===")
     print(f"{f_expr}")
@@ -193,7 +192,7 @@ def test_boolean_properties(n, f_func, g_func):
 
 def test_lat_ddt(n, f_func):
     f_expr = describe_function("f", f_func)
-    f = truth_table_from_func(f_func, n)
+    f = truth_table_from_func(f_func, n) if callable(f_func) else f_func
 
     print("=== LAT & DDT ANALYSIS ===")
     print(f"{f_expr}")
@@ -213,7 +212,13 @@ def test_lat_ddt(n, f_func):
 
 if __name__ == "__main__":
     n = 3
-    f = lambda x: x[0] ^ x[2] ^ x[2]&x[1]
-    g = lambda x: x[0] ^ x[1] ^ x[2]
+    # f = lambda x: x[0] ^ x[2] ^ x[2]&x[1]
+    # g = lambda x: x[0] ^ x[1] ^ x[2]
+
+    # ИЛИ
+
+    f = np.array([0,1,0,0,1,0,1,1])
+    g = np.array([0,1,1,0,1,0,0,1])
+
     test_boolean_properties(n, f, g)
     test_lat_ddt(n, f)
